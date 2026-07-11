@@ -1,0 +1,246 @@
+<meta charset="utf-8">
+<title>NYC Events Digest</title>
+<style>
+  :root {
+    --bg: #F6F7F5;
+    --ink: #1B2430;
+    --muted: #5B6873;
+    --accent: #2E7D6E;
+    --rail: #D8DDE1;
+    --chip-bg: #EAEEF0;
+    --card-line: #E3E7E9;
+    --sold: #A8433C;
+    --warn: #8A6317;
+    --good: #2E6B48;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10151A;
+      --ink: #E6EBEF;
+      --muted: #93A1AC;
+      --accent: #7FC9B8;
+      --rail: #2A343D;
+      --chip-bg: #1B232B;
+      --card-line: #222C34;
+      --sold: #E08D86;
+      --warn: #D9AE55;
+      --good: #7FC69E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10151A; --ink: #E6EBEF; --muted: #93A1AC; --accent: #7FC9B8;
+    --rail: #2A343D; --chip-bg: #1B232B; --card-line: #222C34;
+    --sold: #E08D86; --warn: #D9AE55; --good: #7FC69E;
+  }
+  :root[data-theme="light"] {
+    --bg: #F6F7F5; --ink: #1B2430; --muted: #5B6873; --accent: #2E7D6E;
+    --rail: #D8DDE1; --chip-bg: #EAEEF0; --card-line: #E3E7E9;
+    --sold: #A8433C; --warn: #8A6317; --good: #2E6B48;
+  }
+  html { background: var(--bg); }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0; padding: 3rem 1.25rem 5rem;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; }
+  header .eyebrow {
+    font-size: .75rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600;
+  }
+  h1 {
+    font-family: "Futura", "Avenir Next", "Century Gothic", sans-serif;
+    font-weight: 600; font-size: clamp(1.9rem, 5vw, 2.6rem);
+    letter-spacing: -.01em; line-height: 1.12; margin: .35rem 0 .4rem;
+    text-wrap: balance;
+  }
+  .meta { color: var(--muted); font-size: .9rem; margin: 0 0 2rem; }
+  nav { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.1rem; }
+  .navchip {
+    display: inline-flex; align-items: center; gap: .45em;
+    background: var(--chip-bg); color: var(--ink); text-decoration: none;
+    font-size: .82rem; font-weight: 500; font-family: inherit;
+    padding: .38em .85em; border-radius: 999px;
+    border: 1px solid transparent; cursor: pointer;
+  }
+  .navchip:hover { color: var(--accent); }
+  .navchip.active { border-color: var(--accent); color: var(--accent); }
+  .navchip.active .count { color: var(--accent); }
+  .navchip:focus-visible, .datebtn:focus-visible, #q:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .controls {
+    display: flex; flex-wrap: wrap; gap: .6rem; align-items: center;
+    margin-bottom: 2.5rem;
+  }
+  #q {
+    flex: 1 1 14rem; max-width: 20rem;
+    background: var(--chip-bg); color: var(--ink);
+    border: 1px solid var(--card-line); border-radius: 999px;
+    font: inherit; font-size: .85rem; padding: .4em 1em;
+  }
+  #q::placeholder { color: var(--muted); }
+  .dategroup { display: flex; gap: 0; border: 1px solid var(--card-line); border-radius: 999px; overflow: hidden; }
+  .datebtn {
+    background: none; border: none; cursor: pointer; font-family: inherit;
+    font-size: .8rem; color: var(--muted); padding: .42em .9em;
+  }
+  .datebtn + .datebtn { border-left: 1px solid var(--card-line); }
+  .datebtn.active { background: var(--accent); color: var(--bg); }
+  #noresults { display: none; color: var(--muted); margin: 3rem 0; }
+  section.hidden, .event.hidden { display: none; }
+  .count {
+    font-size: .72rem; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  section { margin-bottom: 3rem; }
+  h2 {
+    font-family: "Futura", "Avenir Next", "Century Gothic", sans-serif;
+    font-weight: 600; font-size: 1.25rem; letter-spacing: .01em;
+    display: flex; align-items: baseline; gap: .6em;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: .45rem; margin: 0 0 .25rem;
+  }
+  .event {
+    display: grid; grid-template-columns: 7.2rem 1fr; gap: 1rem;
+    padding: .95rem 0; border-bottom: 1px solid var(--card-line);
+  }
+  .when {
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: .78rem; color: var(--muted); padding-top: .22rem;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .what a {
+    color: var(--ink); font-weight: 600; text-decoration: none;
+    border-bottom: 1px solid var(--rail);
+  }
+  .what a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .what a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sub {
+    display: inline-block; margin-left: .5em;
+    font-size: .72rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600;
+  }
+  .tag {
+    display: inline-block; margin-left: .55em;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+    font-size: .68rem; letter-spacing: .04em;
+    padding: .1em .55em; border-radius: 999px;
+    border: 1px solid currentColor;
+    vertical-align: .12em; white-space: nowrap;
+  }
+  .tag-sold { color: var(--sold); }
+  .tag-few { color: var(--warn); }
+  .tag-free { color: var(--good); }
+  .tag-price { color: var(--muted); }
+  .freebtn {
+    background: var(--chip-bg); border: 1px solid var(--card-line);
+    border-radius: 999px; cursor: pointer; font-family: inherit;
+    font-size: .8rem; color: var(--muted); padding: .42em .95em;
+  }
+  .freebtn.active { border-color: var(--good); color: var(--good); }
+  .freebtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .where { color: var(--muted); font-size: .85rem; margin-top: .12rem; }
+  .desc { color: var(--muted); font-size: .85rem; margin-top: .3rem; max-width: 60ch; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: .8rem; }
+  footer a { color: var(--accent); }
+  @media (max-width: 480px) {
+    .event { grid-template-columns: 1fr; gap: .15rem; padding: .8rem 0; }
+  }
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">New York City · {{WINDOW}}</div>
+    <h1>What&rsquo;s on in NYC</h1>
+    <p class="meta">{{TOTAL}} events · generated {{GENERATED}} · sources: NYC Tourism, Eventbrite, Playbill, City Parks Foundation</p>
+  </header>
+  <nav aria-label="Category filter">{{NAV}}</nav>
+  <div class="controls">
+    <div class="dategroup" role="group" aria-label="Date filter">
+      <button class="datebtn active" data-range="all">All dates</button>
+      <button class="datebtn" data-range="today">Today</button>
+      <button class="datebtn" data-range="weekend">This weekend</button>
+      <button class="datebtn" data-range="week">Next 7 days</button>
+    </div>
+    <button class="freebtn" id="freeonly" aria-pressed="false">Free only</button>
+    <input id="q" type="search" placeholder="Search events, venues&hellip;" aria-label="Search events">
+  </div>
+  <p id="noresults">No events match these filters.</p>
+  {{SECTIONS}}
+  <footer>
+    Re-run <code>python3 scrape.py --days 14</code> to refresh this digest.
+  </footer>
+</div>
+<script>
+(function () {
+  var TODAY = "{{TODAY}}";
+  var state = { cat: "all", range: "all", q: "", free: false };
+
+  function iso(d) { return d.toISOString().slice(0, 10); }
+  function rangeBounds(mode) {
+    var t = new Date(TODAY + "T12:00:00");
+    if (mode === "today") return [TODAY, TODAY];
+    if (mode === "week") {
+      var w = new Date(t); w.setDate(w.getDate() + 7);
+      return [TODAY, iso(w)];
+    }
+    if (mode === "weekend") {
+      var sat = new Date(t);
+      var day = sat.getDay(); // 0 Sun .. 6 Sat
+      if (day === 0) return [TODAY, TODAY]; // Sunday: rest of this weekend
+      sat.setDate(sat.getDate() + (6 - day));
+      var sun = new Date(sat); sun.setDate(sun.getDate() + 1);
+      return [day === 6 ? TODAY : iso(sat), iso(sun)];
+    }
+    return null;
+  }
+
+  function apply() {
+    var bounds = rangeBounds(state.range);
+    var q = state.q.toLowerCase();
+    var any = false;
+    document.querySelectorAll("section[id]").forEach(function (sec) {
+      var visible = 0;
+      sec.querySelectorAll(".event").forEach(function (ev) {
+        var ok = (state.cat === "all" || ev.dataset.cat === state.cat)
+          && (!bounds || (ev.dataset.start <= bounds[1] && ev.dataset.end >= bounds[0]))
+          && (!state.free || ev.dataset.free === "1")
+          && (!q || ev.dataset.text.indexOf(q) !== -1);
+        ev.classList.toggle("hidden", !ok);
+        if (ok) visible++;
+      });
+      sec.classList.toggle("hidden", visible === 0);
+      if (visible) any = true;
+    });
+    document.getElementById("noresults").style.display = any ? "none" : "block";
+  }
+
+  document.querySelectorAll(".navchip").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".navchip").forEach(function (x) { x.classList.remove("active"); });
+      b.classList.add("active");
+      state.cat = b.dataset.cat;
+      apply();
+    });
+  });
+  document.querySelectorAll(".datebtn").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".datebtn").forEach(function (x) { x.classList.remove("active"); });
+      b.classList.add("active");
+      state.range = b.dataset.range;
+      apply();
+    });
+  });
+  var freeBtn = document.getElementById("freeonly");
+  freeBtn.addEventListener("click", function () {
+    state.free = !state.free;
+    freeBtn.classList.toggle("active", state.free);
+    freeBtn.setAttribute("aria-pressed", String(state.free));
+    apply();
+  });
+  document.getElementById("q").addEventListener("input", function (e) {
+    state.q = e.target.value.trim();
+    apply();
+  });
+})();
+</script>

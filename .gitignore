@@ -1,0 +1,5 @@
+# generated output — re-run scrape.py to produce
+# (index.html is committed: GitHub Pages serves it)
+events.json
+digest.html
+nyct_cache.json
