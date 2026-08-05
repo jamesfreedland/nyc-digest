@@ -3,9 +3,11 @@
 
 Pulls upcoming events from:
   1. NYC Tourism (nyctourism.com) - curated citywide events, all categories
-  2. Eventbrite - music + performing & visual arts, date-filtered
+  2. Eventbrite - music + performing & visual arts + LGBTQ+, date-filtered
   3. Playbill - Broadway shows now playing
   4. City Parks Foundation - SummerStage + free park events (tribe API)
+
+LGBT events from any source are gathered under an "LGBTQ+ & Pride" section by keyword.
 
 Usage:
   python3 scrape.py [--days N]   # default: next 14 days
@@ -50,6 +52,27 @@ def get(url, retries=2):
 
 def strip_tags(s):
     return html.unescape(re.sub(r"<[^>]+>", " ", s or "")).strip()
+
+
+LGBT_RE = re.compile(
+    r"\b(lgbtq?|lgbtqia?|pride|queer|gay|lesbian|sapphic|transgender|nonbinary|non-binary|"
+    r"voguing|drag show|dragshow|drag queen|drag king|drag brunch|drag bingo|drag race|"
+    r"underwear party|jockstrap|jock strap|circuit party|leather night|bear night|"
+    r"kink|fetish|bathhouse|sex party)\b",
+    re.I)
+
+
+def tag_lgbt(events):
+    """Gather LGBT events from every source under one section, by keyword."""
+    n = 0
+    for e in events:
+        if e["category"] == "LGBTQ+ & Pride":
+            continue
+        if LGBT_RE.search(f'{e["title"]} {e["subcategory"]} {e["description"]}'):
+            e["category"] = "LGBTQ+ & Pride"
+            n += 1
+    print(f"  lgbt keyword pass: {n} recategorized", file=sys.stderr)
+    return events
 
 
 def classify(text):
@@ -167,6 +190,10 @@ def scrape_nyctourism(date_from, date_to):
 EB_CATEGORIES = {
     "music--events": "Music",
     "performing-and-visual-arts--events": "Stage & Performing Arts",
+    "lgbtq--events": "LGBTQ+ & Pride",
+    # nightlife feeds the keyword pass: underwear/jockstrap/kink parties often
+    # list there without the LGBTQ category tag
+    "nightlife--events": "City Life & More",
 }
 EB_PAGES = 3  # 20 hits/page per category
 
@@ -337,13 +364,15 @@ def scrape_cityparks(date_from, date_to):
 
 # ---------------------------------------------------------------- digest rendering
 CATEGORY_ORDER = ["Music", "Broadway", "Stage & Performing Arts", "Museums & Exhibitions",
-                  "Festivals & Fairs", "Food & Drink", "Sports", "Family", "City Life & More"]
+                  "Festivals & Fairs", "LGBTQ+ & Pride", "Food & Drink", "Sports", "Family",
+                  "City Life & More"]
 CATEGORY_LABELS = {
     "Music": "Live music & concerts",
     "Broadway": "Broadway",
     "Stage & Performing Arts": "Stage & performing arts",
     "Museums & Exhibitions": "Museums & exhibitions",
     "Festivals & Fairs": "Festivals & fairs",
+    "LGBTQ+ & Pride": "LGBTQ+ & Pride",
     "Food & Drink": "Food & drink",
     "Sports": "Sports",
     "Family": "Family",
@@ -461,6 +490,7 @@ def main():
     events += scrape_eventbrite(date_from, date_to)
     events += scrape_playbill(date_from, date_to)
     events += scrape_cityparks(date_from, date_to)
+    events = tag_lgbt(events)
     events = dedupe(events)
     print(f"Total after dedupe: {len(events)}", file=sys.stderr)
 
